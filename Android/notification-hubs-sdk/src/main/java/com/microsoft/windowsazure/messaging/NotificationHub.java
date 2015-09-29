@@ -86,6 +86,11 @@ public class NotificationHub {
 	 * New registration location header name
 	 */
 	private static final String NEW_REGISTRATION_LOCATION_HEADER = "Location";
+
+	/**
+	 * Notification Hub ID
+	 */
+	private String mID;
 	
 	/**
 	 * The Notification Hub path
@@ -110,7 +115,8 @@ public class NotificationHub {
 	 * @param connectionString	Notification Hub connection string
 	 * @param context	Android context used to access SharedPreferences
 	 */
-	public NotificationHub(String notificationHubPath, String connectionString, Context context) {
+	public NotificationHub(String notificationHubID, String notificationHubPath, String connectionString, Context context) {
+		setNotificationHubID(notificationHubID);
 		setConnectionString(connectionString);
 		setNotificationHubPath(notificationHubPath);
 
@@ -118,9 +124,20 @@ public class NotificationHub {
 			throw new IllegalArgumentException("context");
 		}
 
-		mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(context.getApplicationContext());
+		mSharedPreferences = getNotificationHubSharedPreferences(context);
 		
 		verifyStorageVersion();
+	}
+
+	private int getSharedPreferencesMode() {
+		if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.HONEYCOMB)
+			return Context.MODE_PRIVATE;
+		else
+			return Context.MODE_MULTI_PROCESS;
+	}
+
+	private SharedPreferences getNotificationHubSharedPreferences(Context context) {
+		return context.getSharedPreferences(mID, getSharedPreferencesMode());
 	}
 
 	/**
@@ -162,7 +179,7 @@ public class NotificationHub {
 		// Changing the registration type to Baidu.
 		PnsSpecificRegistrationFactory.getInstance().setRegistrationType(RegistrationType.baidu);
 		
-		return this.register(userId + "-" + channelId , tags);
+		return this.register(userId + "-" + channelId, tags);
 	}
 	
 	/**
@@ -198,7 +215,8 @@ public class NotificationHub {
 
 	/**
 	 * Registers the client for template notifications with the specified tags
-	 * @param pnsHandle	PNS specific identifier
+	 * @param userId Baidu user Id
+	 * @param channelId Baidu channel Id
 	 * @param templateName	The template name
 	 * @param template	The template body
 	 * @param tags	The tags to use in the registration
@@ -353,6 +371,25 @@ public class NotificationHub {
 	}
 
 	/**
+	 * Gets the Notification Hub ID
+	 */
+	public String getNotificationHubID() {
+		return mID;
+	}
+
+	/**
+	 * Sets the Notification Hub path
+	 */
+	public void setNotificationHubID(String notificationHubID) {
+
+		if (isNullOrWhiteSpace(notificationHubID)) {
+			throw new IllegalArgumentException("notificationHubID");
+		}
+
+		mID = notificationHubID;
+	}
+
+	/**
 	 * Gets the Notification Hub path
 	 */
 	public String getNotificationHubPath() {
@@ -469,7 +506,8 @@ public class NotificationHub {
 	
 	/**
 	 * Deletes a registration and removes it from local storage
-	 * @param regInfo	The reginfo JSON object
+	 * @param registrationName	The registration name to store in local storage
+	 * @param registrationId	The registration id to store in local storage
 	 * @throws Exception
 	 */
 	private void deleteRegistrationInternal(String registrationName, String registrationId) throws Exception {
