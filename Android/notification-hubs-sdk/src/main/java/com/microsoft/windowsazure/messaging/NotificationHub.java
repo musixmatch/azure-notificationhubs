@@ -20,9 +20,20 @@ See the Apache Version 2.0 License for specific language governing permissions a
 
 package com.microsoft.windowsazure.messaging;
 
-import static com.microsoft.windowsazure.messaging.Utils.*;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
+import android.preference.PreferenceManager;
 
 import com.microsoft.windowsazure.messaging.Registration.RegistrationType;
+
+import org.apache.http.message.BasicHeader;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -33,18 +44,8 @@ import java.util.Set;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import org.apache.http.message.BasicHeader;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.xml.sax.EntityResolver;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-
-import android.content.Context;
-import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
-import android.preference.PreferenceManager;
+import static com.microsoft.windowsazure.messaging.Utils.getXmlString;
+import static com.microsoft.windowsazure.messaging.Utils.isNullOrWhiteSpace;
 
 
 /**
@@ -137,7 +138,12 @@ public class NotificationHub {
 	}
 
 	private SharedPreferences getNotificationHubSharedPreferences(Context context) {
-		return context.getSharedPreferences(mID, getSharedPreferencesMode());
+		//if mID is null use the old style Preferences
+		if(isNullOrWhiteSpace(mID)) {
+			return PreferenceManager.getDefaultSharedPreferences(context);
+		} else {
+			return context.getSharedPreferences(mID, getSharedPreferencesMode());
+		}
 	}
 
 	/**
@@ -381,11 +387,7 @@ public class NotificationHub {
 	 * Sets the Notification Hub path
 	 */
 	public void setNotificationHubID(String notificationHubID) {
-
-		if (isNullOrWhiteSpace(notificationHubID)) {
-			throw new IllegalArgumentException("notificationHubID");
-		}
-
+		//it can be null
 		mID = notificationHubID;
 	}
 
